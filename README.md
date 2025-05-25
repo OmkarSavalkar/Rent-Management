@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rent Management WebApp
+Is a smart, mobile-friendly rent management application designed specifically for my family to digitally manage our home renters. It simplifies the process of calculating and tracking monthly rent, removing the need for manual paper records.
+This app was built to help my family easily calculate rent for our house renters, keep renter details organized, and maintain rent history — all in one place.
 
-## Getting Started
+---
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 🧮 **Calculate Rent** – Easily compute monthly rent for each renter.
+- 👥 **Manage Renter Profiles** – Store renter names, room numbers, and contact info.
+- 📊 **View Rent History** – Track past payments and generate a digital log.
+- 📱 **Mobile-Optimized** – Designed to work beautifully on Android and iOS devices.
+- 💎 **Modern UI** – Clean, user-friendly interface with smooth transitions.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Built With
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js**
+- **React + TypeScript**
+- **Tailwind CSS**
+- **Responsive Design**
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📌 Purpose
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This project was created to help my **family generate and manage rent** for our **house renters**. It’s an effort to move away from notebooks and make rent tracking simple, accurate, and accessible anytime on mobile.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🙌 Author
+By Omkar Savalkar.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
