@@ -1,7 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle } from "@fortawesome/free-solid-svg-icons";
-import { nanoid } from "nanoid";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 interface IRenterProfile {
   id: string;
@@ -14,87 +22,83 @@ interface IRenterProfile {
 }
 
 const RenterProfile = () => {
-  const [openAddForm, setOpenAddForm] = useState<boolean>(false);
+  let defaultRentalData = {
+    id: "",
+    name: "",
+    joiningDate: "",
+    meterNo: 0,
+    depositPaid: 0,
+    mobile: 0,
+    address: "",
+  };
+  const [ifDisplayForm, setIfDisplayForm] = useState<boolean>(false);
   const [rentersList, setRentersList] = useState<IRenterProfile[]>([]);
   const [newOrEditRenterDetails, setNewOrEditRenterDetails] =
-    useState<IRenterProfile>({
-      id: "",
-      name: "",
-      joiningDate: "",
-      meterNo: 0,
-      depositPaid: 0,
-      mobile: 0,
-      address: "",
-    });
+    useState<IRenterProfile>(defaultRentalData);
 
-  const openAddOrEditFormHandler = (task: string) => {
+  useEffect(() => {
+    fetchRenters();
+  }, []);
+
+  const displayForm = (task: string) => {
     if (task) {
       rentersList.length === 4
-        ? console.log(
+        ? alert(
             "All Renters are already added so please remove any one of them to add new!"
           )
-        : setOpenAddForm(true);
+        : setIfDisplayForm(true);
     }
   };
 
-  const saveRenterProfile = () => {
-    if (newOrEditRenterDetails.id !== "") {
-      setRentersList((currentList) =>
-        currentList.map((item) =>
-          item.id === newOrEditRenterDetails.id ? newOrEditRenterDetails : item
-        )
-      );
-    } else {
-      const newRenter = {
-        ...newOrEditRenterDetails,
-        id: nanoid(),
-      };
-      setRentersList((currentList) => [...currentList, newRenter]);
-    }
-    setOpenAddForm(false);
-    setNewOrEditRenterDetails({
-      id: "",
-      name: "",
-      joiningDate: "",
-      meterNo: 0,
-      depositPaid: 0,
-      mobile: 0,
-      address: "",
-    });
+  const fetchRenters = async () => {
+    const querySnapshot = await getDocs(collection(db, "renters"));
+    const rentersData = querySnapshot.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    })) as IRenterProfile[];
+    setRentersList(rentersData);
   };
 
-  const cancelAddForm = () => {
-    setNewOrEditRenterDetails({
-      id: "",
-      name: "",
-      joiningDate: "",
-      meterNo: 0,
-      depositPaid: 0,
-      mobile: 0,
-      address: "",
-    });
-    setOpenAddForm(false);
+  const saveEditedDetails = async () => {
+    const renterRef = doc(db, "renters", newOrEditRenterDetails.id);
+    let res = await updateDoc(renterRef, newOrEditRenterDetails as any);
+    fetchRenters();
   };
 
-  const deleteRenterProfile = (id: string) => {
-    if (confirm("Are You sure you want to delete this renter profile")) {
-      setRentersList((currentList) =>
-        currentList.filter((item) => item.id != id)
-      );
+  const addNewDetails = async () => {
+    const docRef = await addDoc(
+      collection(db, "renters"),
+      newOrEditRenterDetails
+    );
+    fetchRenters();
+  };
+
+  const deleteRenterProfile = async (id: string) => {
+    if (confirm("Are you sure you want to delete this renter profile?")) {
+      await deleteDoc(doc(db, "renters", id)).then(() => fetchRenters());
     }
-    console.log("Renter profile deleted");
+  };
+
+  const cancelFormDisplay = () => {
+    setNewOrEditRenterDetails(defaultRentalData);
+    setIfDisplayForm(false);
+  };
+
+  const processDetails = async () => {
+    newOrEditRenterDetails.id !== "" ? saveEditedDetails() : addNewDetails();
+    cancelFormDisplay();
   };
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    setNewOrEditRenterDetails((prev) => ({
+    setNewOrEditRenterDetails((prev: any) => ({
       ...prev,
       [name]: value,
     }));
   };
 
   const editRenter = (editRenterProfile: IRenterProfile) => {
-    setOpenAddForm(true);
+    setIfDisplayForm(true);
     setNewOrEditRenterDetails(editRenterProfile);
   };
 
@@ -107,14 +111,14 @@ const RenterProfile = () => {
               Renter Profile
             </h2>
             <button
-              onClick={() => openAddOrEditFormHandler("add")}
+              onClick={() => displayForm("add")}
               className="cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-md transition-transform transform hover:scale-105"
             >
               Add Renter
             </button>
           </div>
 
-          {openAddForm && (
+          {ifDisplayForm && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 { label: "Name", name: "name", placeholder: "Enter Name" },
@@ -166,13 +170,13 @@ const RenterProfile = () => {
               </div>
               <div className="md:col-span-2 flex gap-4 justify-center mt-6">
                 <button
-                  onClick={saveRenterProfile}
+                  onClick={processDetails}
                   className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-6 rounded-full shadow-md hover:scale-105 transition-transform  cursor-pointer"
                 >
                   Save
                 </button>
                 <button
-                  onClick={cancelAddForm}
+                  onClick={cancelFormDisplay}
                   className="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-bold py-2 px-6 rounded-full shadow-md hover:scale-105 transition-transform  cursor-pointer"
                 >
                   Cancel

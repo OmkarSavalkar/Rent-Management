@@ -13,7 +13,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
-    "nanoid": "^5.1.5",
+    "firebase": "^11.9.1",
     "next": "15.3.2",
     "postcss": "^8.5.3",
     "react": "^19.0.0",
