@@ -8,6 +8,7 @@ import {
   addNewRenter,
   deleteRenterDetails,
 } from "../service/service";
+import { useSnackbar } from "notistack";
 
 const RenterProfile = () => {
   let defaultRentalData = {
@@ -29,6 +30,7 @@ const RenterProfile = () => {
   const [rentersList, setRentersList] = useState<IRenterProfile[]>([]);
   const [newOrEditRenterDetails, setNewOrEditRenterDetails] =
     useState<IRenterProfile>(defaultRentalData);
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     fetchRenters();
@@ -45,24 +47,59 @@ const RenterProfile = () => {
   };
 
   const fetchRenters = async () => {
-    let rentersData = await getRenterDetails();
-    rentersData.sort((a, b) => a.meterNo - b.meterNo);
-    setRentersList(rentersData);
+    try {
+      let rentersData = await getRenterDetails();
+      rentersData.sort((a, b) => a.meterNo - b.meterNo);
+      setRentersList(rentersData);
+    } catch (err) {
+      enqueueSnackbar("❌ Failed to get profiles list. Please try again.", {
+        variant: "error",
+      });
+    }
   };
 
   const saveEditedDetails = async () => {
-    let res = await editRenterDetails(newOrEditRenterDetails);
-    fetchRenters();
+    try {
+      let res = await editRenterDetails(newOrEditRenterDetails);
+      enqueueSnackbar("✅ Profile edited successfully!", {
+        variant: "success",
+      });
+      fetchRenters();
+    } catch (err) {
+      enqueueSnackbar("❌ Failed to edit profile. Please try again.", {
+        variant: "error",
+      });
+    }
   };
 
   const addNewDetails = async () => {
-    let res = await addNewRenter(newOrEditRenterDetails);
-    fetchRenters();
+    try {
+      let res = await addNewRenter(newOrEditRenterDetails);
+      enqueueSnackbar("✅ Profile added successfully!", {
+        variant: "success",
+      });
+      fetchRenters();
+    } catch (err) {
+      enqueueSnackbar("❌ Failed to add profile. Please try again.", {
+        variant: "error",
+      });
+    }
   };
 
   const deleteRenterProfile = async (id: string) => {
     if (confirm("Are you sure you want to delete this renter profile?")) {
-      let res = await deleteRenterDetails(id).then(() => fetchRenters());
+      let res = await deleteRenterDetails(id)
+        .then(() => {
+          enqueueSnackbar("✅ Profile deleted successfully!", {
+            variant: "success",
+          });
+          fetchRenters();
+        })
+        .catch((err) =>
+          enqueueSnackbar("❌ Failed to delete profile. Please try again.", {
+            variant: "error",
+          })
+        );
     }
   };
 
@@ -251,84 +288,6 @@ const RenterProfile = () => {
           )}
         </div>
 
-        {/* <div className="flex flex-col items-center gap-6">
-          {rentersList.map((profile, index) => (
-            <div
-              key={index}
-              className="w-full md:w-4/5 bg-white rounded-3xl p-6 shadow-lg border border-purple-200 hover:shadow-2xl transition-shadow duration-300"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <FontAwesomeIcon
-                    icon={faUserCircle}
-                    className="text-green-600 text-5xl drop-shadow"
-                  />
-                  <div>
-                    <h4 className="text-lg font-bold text-purple-800 truncate max-w-[200px]">
-                      <strong>{profile.name}</strong>
-                    </h4>
-                    <p className="text-sm text-gray-600 truncate max-w-[200px]">
-                      <strong>Meter No:</strong> {profile.meterNo}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 ml-auto">
-                  <button
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 cursor-pointer rounded-full text-sm font-medium shadow transition hover:scale-105"
-                    onClick={() => editRenter(profile)}
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    onClick={() => deleteRenterProfile(profile.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 cursor-pointer rounded-full text-sm font-medium shadow transition hover:scale-105"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-
-              <ul className="text-sm text-gray-700 space-y-1 break-words pl-2">
-                <li>
-                  🗓️ <strong>Joining Date:</strong> {profile.joiningDate}
-                </li>
-                <span className="flex justify-between">
-                  <li>
-                    💰 <strong>Deposit Paid:</strong> ₹{profile.depositPaid}
-                  </li>
-                  <li>
-                    💸 <strong>Fixed Rent:</strong> ₹{profile.rent}
-                  </li>
-                  <li>
-                    🪫 <strong>Last Meter Unit:</strong> {profile.lastMeterUnit}
-                  </li>
-                </span>
-
-                <span className="flex justify-between">
-                  <li>
-                    💧 <strong>Water Rate per month:</strong> ₹
-                    {profile.waterRate}
-                  </li>
-                  <li>
-                    ⚡ <strong>Electricity Unit per month:</strong> ₹
-                    {profile.unitRate}
-                  </li>
-                  <li>
-                    🧰 <strong>Maintenance cost per month:</strong> ₹
-                    {profile.maintenanceRate}
-                  </li>
-                </span>
-                <li>
-                  📱 <strong>Mobile:</strong> {profile.mobile}
-                </li>
-                <li>
-                  📍 <strong>Address:</strong> {profile.address}
-                </li>
-              </ul>
-            </div>
-          ))}
-        </div> */}
         <div className="flex flex-col items-center gap-6">
           {rentersList.map((profile, index) => (
             <div

@@ -5,6 +5,7 @@ import {
   addNewHistoryRecord,
   editRenterDetails,
 } from "../service/service";
+import { useSnackbar } from "notistack";
 
 const CalculateRent = () => {
   const [allRenterDetails, setAllRenterDetails] = useState<IRenterProfile[]>(
@@ -21,6 +22,7 @@ const CalculateRent = () => {
   const [rentMessage, setRentMessage] = useState<string>("");
   const [rentDistributionStatement, setRentDistributionStatement] =
     useState<string>("");
+  const { enqueueSnackbar } = useSnackbar();
 
   const currentDate = new Date();
   const previousMonth = new Date(
@@ -73,33 +75,42 @@ const CalculateRent = () => {
   };
 
   const saveRentToFirestore = async () => {
-    const rentData = {
-      id: selectedRenterDetails.id,
-      name: selectedRenterDetails.name,
-      month: rentMonth,
-      year: rentYear,
-      rentAmount: Number(selectedRenterDetails.rent),
-      unitRate: Number(selectedRenterDetails.unitRate),
-      electricityCharge:
-        (Number(currentElectricityUnit) - lastMonthsUnit) *
-        selectedRenterDetails.unitRate,
-      totalRent,
-      lastMeterUnit: lastMonthsUnit,
-      currentMeterUnit: Number(currentElectricityUnit),
-      generatedOn: new Date().toISOString(),
-    };
+    try {
+      const rentData = {
+        id: selectedRenterDetails.id,
+        name: selectedRenterDetails.name,
+        month: rentMonth,
+        year: rentYear,
+        rentAmount: Number(selectedRenterDetails.rent),
+        unitRate: `${
+          Number(currentElectricityUnit) - lastMonthsUnit
+        } x ${Number(selectedRenterDetails.unitRate)}`,
+        electricityCharge:
+          (Number(currentElectricityUnit) - lastMonthsUnit) *
+          selectedRenterDetails.unitRate,
+        totalRent,
+        lastMeterUnit: lastMonthsUnit,
+        currentMeterUnit: Number(currentElectricityUnit),
+        generatedOn: new Date().toISOString(),
+      };
 
-    await addNewHistoryRecord(rentData);
+      await addNewHistoryRecord(rentData);
 
-    const updatedDetails = {
-      ...selectedRenterDetails,
-      lastMeterUnit: Number(currentElectricityUnit),
-      lastGenerated: new Date().toLocaleDateString("en-GB"),
-    };
-    await editRenterDetails(updatedDetails);
-    setSelectedRenterDetails(updatedDetails);
-
-    alert("✅ Rent saved and last unit updated!");
+      const updatedDetails = {
+        ...selectedRenterDetails,
+        lastMeterUnit: Number(currentElectricityUnit),
+        lastGenerated: new Date().toLocaleDateString("en-GB"),
+      };
+      await editRenterDetails(updatedDetails);
+      setSelectedRenterDetails(updatedDetails);
+      enqueueSnackbar("✅ Rent saved to history successfully!", {
+        variant: "success",
+      });
+    } catch (err) {
+      enqueueSnackbar("❌ Failed to save rent. Please try again.", {
+        variant: "error",
+      });
+    }
   };
 
   return (
@@ -174,11 +185,13 @@ const CalculateRent = () => {
                 />
               </div>
 
-              <div className="pt-0 md:mt-5">
-                <label>
-                  Units: {Number(currentElectricityUnit) - lastMonthsUnit}
-                </label>
-              </div>
+              {currentElectricityUnit && (
+                <div className="pt-0 md:mt-5">
+                  <label>
+                    Units: {Number(currentElectricityUnit) - lastMonthsUnit}
+                  </label>
+                </div>
+              )}
             </div>
 
             <button
