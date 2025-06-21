@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle } from "@fortawesome/free-solid-svg-icons";
-import { db } from "@/lib/firebase";
+import { IRenterProfile } from "../interface/interface";
 import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  deleteDoc,
-  updateDoc,
-} from "firebase/firestore";
-
-interface IRenterProfile {
-  id: string;
-  name: string;
-  joiningDate: string;
-  meterNo: number;
-  depositPaid: number;
-  mobile: number;
-  address: string;
-}
+  getRenterDetails,
+  editRenterDetails,
+  addNewRenter,
+  deleteRenterDetails,
+} from "../service/service";
 
 const RenterProfile = () => {
   let defaultRentalData = {
@@ -30,6 +18,12 @@ const RenterProfile = () => {
     depositPaid: 0,
     mobile: 0,
     address: "",
+    lastMeterUnit: 0,
+    waterRate: 0,
+    unitRate: 0,
+    maintenanceRate: 0,
+    rent: 0,
+    lastGenerated: "",
   };
   const [ifDisplayForm, setIfDisplayForm] = useState<boolean>(false);
   const [rentersList, setRentersList] = useState<IRenterProfile[]>([]);
@@ -51,32 +45,24 @@ const RenterProfile = () => {
   };
 
   const fetchRenters = async () => {
-    const querySnapshot = await getDocs(collection(db, "renters"));
-    const rentersData = querySnapshot.docs.map((doc) => ({
-      ...doc.data(),
-      id: doc.id,
-    })) as IRenterProfile[];
+    let rentersData = await getRenterDetails();
     rentersData.sort((a, b) => a.meterNo - b.meterNo);
     setRentersList(rentersData);
   };
 
   const saveEditedDetails = async () => {
-    const renterRef = doc(db, "renters", newOrEditRenterDetails.id);
-    let res = await updateDoc(renterRef, newOrEditRenterDetails as any);
+    let res = await editRenterDetails(newOrEditRenterDetails);
     fetchRenters();
   };
 
   const addNewDetails = async () => {
-    const docRef = await addDoc(
-      collection(db, "renters"),
-      newOrEditRenterDetails
-    );
+    let res = await addNewRenter(newOrEditRenterDetails);
     fetchRenters();
   };
 
   const deleteRenterProfile = async (id: string) => {
     if (confirm("Are you sure you want to delete this renter profile?")) {
-      await deleteDoc(doc(db, "renters", id)).then(() => fetchRenters());
+      let res = await deleteRenterDetails(id).then(() => fetchRenters());
     }
   };
 
@@ -86,8 +72,19 @@ const RenterProfile = () => {
   };
 
   const processDetails = async () => {
-    const { name, joiningDate, meterNo, depositPaid, mobile, address } =
-      newOrEditRenterDetails;
+    const {
+      name,
+      joiningDate,
+      meterNo,
+      depositPaid,
+      lastMeterUnit,
+      rent,
+      waterRate,
+      unitRate,
+      maintenanceRate,
+      mobile,
+      address,
+    } = newOrEditRenterDetails;
 
     if (
       !name ||
@@ -95,13 +92,27 @@ const RenterProfile = () => {
       !meterNo ||
       !depositPaid ||
       !mobile ||
-      !address
+      !address ||
+      !lastMeterUnit ||
+      !waterRate ||
+      !unitRate ||
+      !maintenanceRate ||
+      !rent
     ) {
       alert("Please fill in all fields.");
       return;
     }
 
-    if (isNaN(meterNo) || isNaN(depositPaid) || isNaN(mobile)) {
+    if (
+      isNaN(meterNo) ||
+      isNaN(depositPaid) ||
+      isNaN(mobile) ||
+      isNaN(lastMeterUnit) ||
+      isNaN(waterRate) ||
+      isNaN(unitRate) ||
+      isNaN(maintenanceRate) ||
+      isNaN(rent)
+    ) {
       alert("Meter No, Deposit Paid, and Mobile must be valid numbers.");
       return;
     }
@@ -149,24 +160,49 @@ const RenterProfile = () => {
           {ifDisplayForm && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
-                { label: "Name", name: "name", placeholder: "Enter Name" },
+                { label: "Name: 🙋‍♂️", name: "name", placeholder: "Enter Name" },
                 {
-                  label: "Joining Date",
+                  label: "Joining Date:🗓️",
                   name: "joiningDate",
                   placeholder: "DD/MM/YYYY",
                 },
                 {
-                  label: "Meter No",
+                  label: "Meter No: 🔌",
                   name: "meterNo",
                   placeholder: "Enter number",
                 },
                 {
-                  label: "Deposit Paid",
+                  label: "Deposit Paid: 💰",
                   name: "depositPaid",
                   placeholder: "Deposit amount",
                 },
                 {
-                  label: "Mobile Number",
+                  label: "Fixed Rent:💸",
+                  name: "rent",
+                  placeholder: "Enter rent amount",
+                },
+                {
+                  label: "Last Meter Unit: 🪫",
+                  name: "lastMeterUnit",
+                  placeholder: "Enter last meter unit to calculate forward",
+                },
+                {
+                  label: "Set Water Charge per month:💧",
+                  name: "waterRate",
+                  placeholder: "Enter Water charge per month",
+                },
+                {
+                  label: "Set Electricity charge per unit: ⚡",
+                  name: "unitRate",
+                  placeholder: "Enter Electricity charge per unit",
+                },
+                {
+                  label: "Set Maintenance cost: 🧰",
+                  name: "maintenanceRate",
+                  placeholder: "Enter Maintenance charge per month",
+                },
+                {
+                  label: "Mobile Number: 📱",
                   name: "mobile",
                   placeholder: "Enter mobile number",
                 },
@@ -186,7 +222,7 @@ const RenterProfile = () => {
               ))}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address
+                  Address: 📍
                 </label>
                 <textarea
                   name="address"
@@ -197,7 +233,7 @@ const RenterProfile = () => {
                 />
               </div>
 
-              <div className="md:col-span-2 flex gap-4 justify-center mt-6">
+              <div className="md:col-span-2 flex gap-4 justify-center mt-2">
                 <button
                   onClick={processDetails}
                   className="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-1 px-4 rounded-full shadow-md hover:scale-105 transition-transform cursor-pointer"
@@ -215,7 +251,7 @@ const RenterProfile = () => {
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-6">
+        {/* <div className="flex flex-col items-center gap-6">
           {rentersList.map((profile, index) => (
             <div
               key={index}
@@ -237,7 +273,6 @@ const RenterProfile = () => {
                   </div>
                 </div>
 
-                {/* Vertical Buttons */}
                 <div className="flex flex-col gap-2 ml-auto">
                   <button
                     className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 cursor-pointer rounded-full text-sm font-medium shadow transition hover:scale-105"
@@ -256,18 +291,111 @@ const RenterProfile = () => {
 
               <ul className="text-sm text-gray-700 space-y-1 break-words pl-2">
                 <li>
-                  <strong>Joining Date:</strong> {profile.joiningDate}
+                  🗓️ <strong>Joining Date:</strong> {profile.joiningDate}
+                </li>
+                <span className="flex justify-between">
+                  <li>
+                    💰 <strong>Deposit Paid:</strong> ₹{profile.depositPaid}
+                  </li>
+                  <li>
+                    💸 <strong>Fixed Rent:</strong> ₹{profile.rent}
+                  </li>
+                  <li>
+                    🪫 <strong>Last Meter Unit:</strong> {profile.lastMeterUnit}
+                  </li>
+                </span>
+
+                <span className="flex justify-between">
+                  <li>
+                    💧 <strong>Water Rate per month:</strong> ₹
+                    {profile.waterRate}
+                  </li>
+                  <li>
+                    ⚡ <strong>Electricity Unit per month:</strong> ₹
+                    {profile.unitRate}
+                  </li>
+                  <li>
+                    🧰 <strong>Maintenance cost per month:</strong> ₹
+                    {profile.maintenanceRate}
+                  </li>
+                </span>
+                <li>
+                  📱 <strong>Mobile:</strong> {profile.mobile}
                 </li>
                 <li>
-                  <strong>Deposit Paid:</strong> ₹{profile.depositPaid}
-                </li>
-                <li>
-                  <strong>Mobile:</strong> {profile.mobile}
-                </li>
-                <li>
-                  <strong>Address:</strong> {profile.address}
+                  📍 <strong>Address:</strong> {profile.address}
                 </li>
               </ul>
+            </div>
+          ))}
+        </div> */}
+        <div className="flex flex-col items-center gap-6">
+          {rentersList.map((profile, index) => (
+            <div
+              key={index}
+              className="w-full md:w-4/5 bg-white rounded-2xl p-5 shadow-md border border-purple-200 hover:shadow-xl transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-4">
+                  <FontAwesomeIcon
+                    icon={faUserCircle}
+                    className="text-green-600 text-5xl drop-shadow"
+                  />
+                  <div>
+                    <h4 className="text-lg font-semibold text-purple-800">
+                      {profile.name}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      <strong>Meter No:</strong> {profile.meterNo}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => editRenter(profile)}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow transition-transform hover:scale-105"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => deleteRenterProfile(profile.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow transition-transform hover:scale-105"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-800">
+                <p>
+                  🗓️ <strong>Joining Date:</strong> {profile.joiningDate}
+                </p>
+                <p>
+                  💰 <strong>Deposit Paid:</strong> ₹{profile.depositPaid}
+                </p>
+                <p>
+                  💸 <strong>Fixed Rent:</strong> ₹{profile.rent}
+                </p>
+                <p>
+                  🪫 <strong>Last Meter Unit:</strong> {profile.lastMeterUnit}
+                </p>
+                <p>
+                  💧 <strong>Water Rate:</strong> ₹{profile.waterRate}
+                </p>
+                <p>
+                  ⚡ <strong>Electricity Rate:</strong> ₹{profile.unitRate}
+                </p>
+                <p>
+                  🧰 <strong>Maintenance:</strong> ₹{profile.maintenanceRate}
+                </p>
+                <p>
+                  📱 <strong>Mobile:</strong> {profile.mobile}
+                </p>
+                <p className="sm:col-span-2 md:col-span-3">
+                  📍 <strong>Address:</strong> {profile.address}
+                </p>
+              </div>
             </div>
           ))}
         </div>
