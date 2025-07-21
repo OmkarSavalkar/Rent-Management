@@ -67,10 +67,8 @@ export const addNewHistoryRecord = async (rentHistoryData: any) => {
     // return true;
     // try {
     const rentDocRef = doc(db, "rentHistory", rentHistoryData.id);
-
     // Check if history exists for this renter
     const docSnap = await getDoc(rentDocRef);
-
     if (docSnap.exists()) {
       // ✅ Append to existing records array
       await updateDoc(rentDocRef, {
@@ -87,5 +85,15 @@ export const addNewHistoryRecord = async (rentHistoryData: any) => {
   } catch (error) {
     console.error("Error adding rent history record:", error);
     throw error;
+  }
+};
+
+export const getHistoryList = async (id: string) => {
+  try {
+    const rentDocRef = doc(db, "rentHistory", id);
+    const rentDocSnap = await getDoc(rentDocRef);
+    return rentDocSnap?.data()?.records;
+  } catch (error) {
+    console.error("Error getting rent history list", error);
   }
 };

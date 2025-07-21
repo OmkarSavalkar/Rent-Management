@@ -1,17 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { IRenterProfile } from "../interface/interface";
-import {
-  getRenterDetails,
-  addNewHistoryRecord,
-  editRenterDetails,
-} from "../service/service";
+import { addNewHistoryRecord, editRenterDetails } from "../service/service";
 import { useSnackbar } from "notistack";
+import RenterDropdown from "../common/renterDropdown";
 
 const CalculateRent = () => {
-  const [allRenterDetails, setAllRenterDetails] = useState<IRenterProfile[]>(
-    []
-  );
-  const [selectedRenterOption, setSelectedRenterOption] = useState("");
   const [selectedRenterDetails, setSelectedRenterDetails] = useState<
     IRenterProfile | null | any
   >(null);
@@ -34,18 +27,7 @@ const CalculateRent = () => {
   const rentYear = previousMonth.getFullYear();
   const headingDate = `Month ${rentMonth}-${rentYear}`;
 
-  useEffect(() => {
-    fetchRentersForOptions();
-  }, []);
-
-  const fetchRentersForOptions = async () => {
-    const rentersData = await getRenterDetails();
-    setAllRenterDetails(rentersData as any);
-  };
-
-  const handleRenterDropdownChange = (e: any) => {
-    const renter = allRenterDetails.find((item) => item.id === e.target.value);
-    setSelectedRenterOption(e.target.value);
+  const getSelectedRenterFromDropdown = (renter: IRenterProfile) => {
     setSelectedRenterDetails(renter || null);
     setTotalRent(0);
     setCurrentElectricityUnit("");
@@ -54,24 +36,32 @@ const CalculateRent = () => {
   };
 
   const calculateTotalRent = () => {
-    if (!selectedRenterDetails || !(Number(currentElectricityUnit) > 0)) return;
-    const { rent, waterRate, maintenanceRate, unitRate, name } =
-      selectedRenterDetails;
-    const electricityCharge =
-      (Number(currentElectricityUnit) - lastMonthsUnit) * unitRate;
-    const total =
-      Number(rent) +
-      Number(waterRate) +
-      Number(maintenanceRate) +
-      Number(electricityCharge);
-    setTotalRent(total);
-    setRentDistributionStatement(
-      `${rent} (rent) + ${waterRate} (water rate) + ${maintenanceRate} (maintenance) + ${electricityCharge} (electricity)`
-    );
-    const message = `Hi ${name}, your rent for ${headingDate} is ₹${total}. Electricity bill is ₹${electricityCharge} with ${
-      Number(currentElectricityUnit) - lastMonthsUnit
-    } units in ${rentMonth} month.`;
-    setRentMessage(message);
+    if (selectedRenterDetails) {
+      if (!(Number(currentElectricityUnit) - lastMonthsUnit)) {
+        enqueueSnackbar("❌ Enter correct current unit.", {
+          variant: "error",
+        });
+        return;
+      } else {
+        const { rent, waterRate, maintenanceRate, unitRate, name } =
+          selectedRenterDetails;
+        const electricityCharge =
+          (Number(currentElectricityUnit) - lastMonthsUnit) * unitRate;
+        const total =
+          Number(rent) +
+          Number(waterRate) +
+          Number(maintenanceRate) +
+          Number(electricityCharge);
+        setTotalRent(total);
+        setRentDistributionStatement(
+          `${rent} (rent) + ${waterRate} (water rate) + ${maintenanceRate} (maintenance) + ${electricityCharge} (electricity)`
+        );
+        const message = `Hi ${name}, your house rent for ${headingDate} is ₹${total}. Electricity bill is ₹${electricityCharge} with ${
+          Number(currentElectricityUnit) - lastMonthsUnit
+        } units in ${rentMonth} month.`;
+        setRentMessage(message);
+      }
+    }
   };
 
   const saveRentToFirestore = async () => {
@@ -92,6 +82,8 @@ const CalculateRent = () => {
         lastMeterUnit: lastMonthsUnit,
         currentMeterUnit: Number(currentElectricityUnit),
         generatedOn: new Date().toISOString(),
+        waterAndMaintenance: `${selectedRenterDetails.waterRate} +
+          ${selectedRenterDetails.maintenanceRate}`,
       };
 
       await addNewHistoryRecord(rentData);
@@ -120,26 +112,9 @@ const CalculateRent = () => {
           <h2 className="text-center text-lg sm:text-xl font-bold text-purple-800">
             🏠 Calculate Rent for {headingDate}
           </h2>
-
-          {allRenterDetails.length ? (
-            <select
-              name="renterDropdown"
-              value={selectedRenterOption}
-              onChange={handleRenterDropdownChange}
-              className="w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-purple-300 focus:outline-none"
-            >
-              <option value="">-- Select a renter --</option>
-              {allRenterDetails.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <p className="text-sm text-gray-700 text-center">
-              ℹ️ Enter renter details in the dashboard to proceed.
-            </p>
-          )}
+          <RenterDropdown
+            renterDropdownUpdated={getSelectedRenterFromDropdown}
+          />
         </div>
 
         {selectedRenterDetails && (
