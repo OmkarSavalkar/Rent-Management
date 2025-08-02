@@ -1,6 +1,6 @@
 # Rent Management WebApp
 Is a smart, mobile-friendly rent management application designed specifically for my family to digitally manage our home renters. It simplifies the process of calculating and tracking monthly rent, removing the need for manual paper records.
-This app was built to help my family easily calculate rent for our house renters, keep renter details organized, and maintain rent history — all in one place.
+This app was built to help my family easily calculate rent for our house renters, keep renter details organized, and maintain rent history, ease to notify renters — all in one place.
 
 ---
 
