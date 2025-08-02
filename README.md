@@ -7,7 +7,7 @@ This app was built to help my family easily calculate rent for our house renters
 ## ✨ Features
 
 - 🧮 **Calculate Rent** – Easily compute monthly rent for each renter.
-- 👥 **Manage Renter Profiles** – Store renter names, room numbers, and contact info.
+- 👥 **Manage Renter Profiles** – Implemented CRUD usinf firbase firestore to store renter names, room numbers, and contact info.
 - 📊 **View Rent History** – Track past payments and generate a digital log.
 - 📱 **Mobile-Optimized** – Designed to work beautifully on Android and iOS devices.
 - 💎 **Modern UI** – Clean, user-friendly interface with smooth transitions.
@@ -19,6 +19,7 @@ This app was built to help my family easily calculate rent for our house renters
 - **Next.js**
 - **React + TypeScript**
 - **Tailwind CSS**
+- **Firebase Firestore**
 - **Responsive Design**
 
 ---
